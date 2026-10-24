@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS = {
   showTranslit: true,
   showExample: true,
   theme: 'auto',
+  ruFont: 'print',
   updatedAt: 0,
 };
 
@@ -75,6 +76,7 @@ function sanitizeSettings(raw) {
     showTranslit: src.showTranslit !== false,
     showExample: src.showExample !== false,
     theme: THEMES.includes(src.theme) ? src.theme : 'auto',
+    ruFont: src.ruFont === 'hand' ? 'hand' : 'print',
     updatedAt: num(src.updatedAt, 0),
   };
 }

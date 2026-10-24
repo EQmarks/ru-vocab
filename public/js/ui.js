@@ -8,7 +8,8 @@ export function esc(value) {
   return String(value).replace(/[&<>"']/g, (ch) => ESCAPE_MAP[ch]);
 }
 
-// 把带重音符（U+0301）的俄语词渲染成安全 HTML；重音符与元音包在同一个 span 里，不会被换行拆开。
+// 把带重音符（U+0301）的俄语词渲染成安全 HTML。
+// 重音不用字体的组合音标（不同字体会错位），改用 span 上的 CSS 斜线，跨字体都能贴住元音。
 export function stressHTML(text) {
   const source = String(text || '');
   const parts = [];
@@ -21,7 +22,7 @@ export function stressHTML(text) {
   }
   let html = '';
   for (const part of parts) {
-    if (part.stress) html += '<span class="stress">' + esc(part.base) + '\u0301</span>';
+    if (part.stress) html += '<span class="stress">' + esc(part.base) + '</span>';
     else html += esc(part.base);
   }
   return html;

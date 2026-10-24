@@ -243,7 +243,7 @@ export function mountSyncPanel(hostEl) {
     details.appendChild(el('summary', {}, '不知道怎么配置？三步摘要'));
     details.appendChild(el('ol', {}, HELP_STEPS.map((step) => el('li', {}, step))));
     details.appendChild(el('p', {}, [
-      el('a', { href: 'docs/GITHUB-SYNC.md', target: '_blank', rel: 'noopener' }, '查看完整配置与常见错误排查文档'),
+      el('a', { href: 'https://github.com/EQmarks/ru-vocab/blob/main/docs/GITHUB-SYNC.md', target: '_blank', rel: 'noopener' }, '查看完整配置与常见错误排查文档'),
     ]));
     section.appendChild(details);
     updateFeedback();

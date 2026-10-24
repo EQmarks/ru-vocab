@@ -44,6 +44,18 @@ export function build() {
   };
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(OUT_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+
+  // 把 docs/*.md 同步到 public/docs/，这样站点里的文档链接不会 404
+  const docsDir = path.join(ROOT, 'docs');
+  const pubDocs = path.join(ROOT, 'public', 'docs');
+  if (fs.existsSync(docsDir)) {
+    fs.mkdirSync(pubDocs, { recursive: true });
+    const PUB_DOCS = ['GITHUB-SYNC.md', 'DEPLOY.md'];
+    for (const name of fs.readdirSync(docsDir)) {
+      if (!PUB_DOCS.includes(name)) continue;
+      fs.copyFileSync(path.join(docsDir, name), path.join(pubDocs, name));
+    }
+  }
   console.log('已生成 ' + path.relative(ROOT, OUT_FILE) + '：' + outUnits.length + ' 单元 / ' + total + ' 词');
   return payload;
 }

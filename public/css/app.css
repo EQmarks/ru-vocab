@@ -18,6 +18,26 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: "RV Hand";
+  src: url("../fonts/rv-hand.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 手写体模式：俄语单词改用连笔字库（只影响俄语展示，不改变中文 UI） */
+html[data-ru-font="hand"] {
+  --font-ru: var(--font-hand);
+}
+html[data-ru-font="hand"] .study-word {
+  font-size: clamp(44px, 12vw, 66px);
+  letter-spacing: 0.01em;
+}
+html[data-ru-font="hand"] .prompt-word,
+html[data-ru-font="hand"] .detail-word {
+  letter-spacing: 0.01em;
+}
 
 /* ==================== 1. 设计变量 ==================== */
 
@@ -74,6 +94,7 @@
   /* 优先用随站点分发的字体：手机换了主题字体也不会影响站内字形 */
   --font-sans: "RV Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-ru: "RV Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+  --font-hand: "RV Hand", "RV Serif SC", "Noto Serif SC", cursive;
   --font-mono: "RV Sans SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   color-scheme: light;
@@ -238,7 +259,24 @@ svg {
 }
 
 .stress {
+  position: relative;
+  display: inline-block;
   white-space: nowrap;
+}
+
+/* 重音：用 CSS 画的小斜线，跨字体都能贴住元音上沿（不依赖字体的组合音标 U+0301） */
+.stress::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: var(--stress-top, 0.40em);
+  width: 0.26em;
+  height: 0.085em;
+  margin-left: -0.01em;
+  background: currentColor;
+  border-radius: 0.05em;
+  transform: translateX(-50%) rotate(-12deg);
+  pointer-events: none;
 }
 
 .sr-only {
@@ -421,16 +459,11 @@ svg {
   }
 
   .brand-mark {
-    display: grid;
-    place-items: center;
+    display: block;
+    flex: none;
     width: 36px;
     height: 36px;
-    border-radius: 12px;
-    background: var(--accent);
-    color: var(--on-accent);
-    font-family: var(--font-ru);
-    font-size: 20px;
-    font-weight: 700;
+    border-radius: 10px;
   }
 
   .brand-text {
@@ -2486,17 +2519,11 @@ svg {
 }
 
 .splash-mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 64px;
   height: 64px;
   margin-bottom: var(--sp-2);
   border-radius: 20px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-family: var(--font-ru);
-  font-size: 34px;
-  font-weight: 700;
   box-shadow: var(--shadow-1);
 }
 

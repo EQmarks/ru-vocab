@@ -10,7 +10,7 @@ import * as ui from './ui.js';
 
 /* ==================== 常量 ==================== */
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 const STATUS_LABEL = { new: '新词', learning: '学习中', review: '复习中', mastered: '已掌握' };
 const GENDER_LABEL = { 'м': '阳性', 'ж': '阴性', 'с': '中性', 'мн': '复数' };
@@ -190,6 +190,12 @@ function applyTheme(theme) {
   if (meta) meta.setAttribute('content', pickThemeColor(theme));
 }
 
+function applyRuFont(value) {
+  const root = document.documentElement;
+  if (value === 'hand') root.dataset.ruFont = 'hand';
+  else delete root.dataset.ruFont;
+}
+
 function bindColorSchemeListener() {
   try {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -229,6 +235,7 @@ async function start() {
     /* 同步不可用不影响本地学习 */
   }
   applyTheme(store.settings.theme);
+  applyRuFont(store.settings.ruFont);
   bindGlobalEvents();
   bindColorSchemeListener();
   prepareSpeech();
@@ -1527,7 +1534,14 @@ function viewSettings(root) {
             ).join('') +
           '</div>' +
         '</div>' +
-        '<p class="card-note">每日上限按「今天已经学过多少」计算，修改后立即生效。</p>' +
+        '<div class="setting-row setting-row--stack">' +
+          '<span>俄语字体</span>' +
+          '<div class="segmented" role="group" aria-label="俄语字体">' +
+            '<button type="button" class="segment' + (settings.ruFont === 'hand' ? '' : ' is-active') + '" data-rufont-opt="print" aria-pressed="' + (settings.ruFont !== 'hand') + '">印刷体</button>' +
+            '<button type="button" class="segment' + (settings.ruFont === 'hand' ? ' is-active' : '') + '" data-rufont-opt="hand" aria-pressed="' + (settings.ruFont === 'hand') + '">手写体</button>' +
+          '</div>' +
+        '</div>' +
+        '<p class="card-note">每日上限按「今天已经学过多少」计算，修改后立即生效；手写体用于练习阅读俄语连笔字。</p>' +
       '</div>' +
 
       '<div class="card">' +
@@ -1573,6 +1587,20 @@ function viewSettings(root) {
       applyTheme(theme);
       store.setSettings({ theme: theme });
       for (const node of themeButtons) {
+        const active = node === button;
+        node.classList.toggle('is-active', active);
+        node.setAttribute('aria-pressed', String(active));
+      }
+    });
+  }
+
+  const ruFontButtons = root.querySelectorAll('[data-rufont-opt]');
+  for (const button of ruFontButtons) {
+    button.addEventListener('click', () => {
+      const value = button.getAttribute('data-rufont-opt') === 'hand' ? 'hand' : 'print';
+      applyRuFont(value);
+      store.setSettings({ ruFont: value });
+      for (const node of ruFontButtons) {
         const active = node === button;
         node.classList.toggle('is-active', active);
         node.setAttribute('aria-pressed', String(active));
@@ -1674,6 +1702,7 @@ function viewSettings(root) {
           store.setDeviceName('设备-' + Math.random().toString(36).slice(2, 6).toUpperCase());
         }
         applyTheme(store.settings.theme);
+        applyRuFont(store.settings.ruFont);
         ui.toast('本机数据已清除', { type: 'ok' });
         remountCurrentView();
       } catch (err) {
