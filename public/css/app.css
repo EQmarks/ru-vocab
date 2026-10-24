@@ -3,6 +3,22 @@
  * 深浅两套主题：默认浅色；系统深色自动切换；[data-theme] 手动覆盖。
  */
 
+/* 内置字体（Noto Sans/Serif SC 子集，OFL）：不依赖手机主题字体，桌面/手机字形一致 */
+@font-face {
+  font-family: "RV Sans SC";
+  src: url("../fonts/rv-sans.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "RV Serif SC";
+  src: url("../fonts/rv-serif.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ==================== 1. 设计变量 ==================== */
 
 :root {
@@ -55,9 +71,10 @@
   --sidebar-w: 220px;
   --content-max: 820px;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-  --font-ru: Georgia, "Times New Roman", "Noto Serif", "Songti SC", serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* 优先用随站点分发的字体：手机换了主题字体也不会影响站内字形 */
+  --font-sans: "RV Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-ru: "RV Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+  --font-mono: "RV Sans SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   color-scheme: light;
 }
@@ -143,7 +160,8 @@ html {
 
 html,
 body {
-  overflow-x: hidden;
+  /* 用 clip 不用 hidden：hidden 会让 body 变成滚动容器，桌面侧栏 sticky 会跟着内容滚走 */
+  overflow-x: clip;
 }
 
 html.modal-open,
