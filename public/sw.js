@@ -1,7 +1,7 @@
-// public/sw.js — Service Worker：应用壳缓存优先，词库网络优先。
+// public/sw.js — Service Worker：静态资源先缓存、后台更新；导航与词库网络优先。
 // 只处理同源 GET；api.github.com 等跨域请求完全不拦截。
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const SHELL_CACHE = 'rv-shell-' + VERSION;
 const DATA_CACHE = 'rv-data-' + VERSION;
 const DATA_PATH = '/data/words.json';
@@ -68,24 +68,26 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkFirst(request, SHELL_CACHE, './index.html'));
     return;
   }
-  event.respondWith(cacheFirst(request, SHELL_CACHE));
+  event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
 });
 
-async function cacheFirst(request, cacheName) {
+// 静态资源用「先给缓存、后台更新」：装成 App 后也能在联网时自动拿到新版本。
+async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request, { ignoreSearch: true });
+  const network = fetch(request)
+    .then((response) => {
+      if (response && response.ok && response.type === 'basic') cache.put(request, response.clone());
+      return response;
+    })
+    .catch(() => null);
   if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response && response.ok && response.type === 'basic') cache.put(request, response.clone());
-    return response;
-  } catch (err) {
-    if (cached) return cached;
-    return new Response('离线且未缓存', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
-  }
+  const response = await network;
+  if (response) return response;
+  return new Response('离线且未缓存', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }
 
 async function networkFirst(request, cacheName, fallbackUrl) {
