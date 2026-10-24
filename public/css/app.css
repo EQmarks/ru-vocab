@@ -2079,6 +2079,11 @@ svg {
   overflow-wrap: break-word;
 }
 
+/* 对照模式：词表主字用印刷体，手写体留给学习卡/详情 */
+html[data-ru-font="both"] .word-ru {
+  font-family: var(--font-print);
+}
+
 .word-tr {
   overflow: hidden;
   font-size: 12px;
