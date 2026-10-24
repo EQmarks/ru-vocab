@@ -76,7 +76,7 @@ function sanitizeSettings(raw) {
     showTranslit: src.showTranslit !== false,
     showExample: src.showExample !== false,
     theme: THEMES.includes(src.theme) ? src.theme : 'auto',
-    ruFont: src.ruFont === 'hand' ? 'hand' : 'print',
+    ruFont: ['print', 'hand', 'both'].includes(src.ruFont) ? src.ruFont : 'print',
     updatedAt: num(src.updatedAt, 0),
   };
 }
