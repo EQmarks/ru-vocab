@@ -6,9 +6,9 @@
 
 - rv-hand.woff2
   手写体：以 Bad Script（Gaslight，OFL）为基础，
-  字母「т」取自 Caveat（Impallari Type，OFL）的俄语连笔「m」形，
-  并在轮廓上做等距内缩（减细约 20 单位）以匹配 Bad Script 的笔锋，
-  底端对齐基线；按 OFL 要求改名为「RV Hand」。
+  字母「м」「т」统一使用 Caveat（Impallari Type，OFL）里干净的小写 m 形
+  （т 不再带中间小尖），并在轮廓上做等距内缩（减细约 18 单位）
+  以匹配 Bad Script 的笔锋；按 OFL 要求改名为「RV Hand」。
   用途：俄语手写体认读练习。
 
 字体文件仅用于本站展示，不单独分发。
