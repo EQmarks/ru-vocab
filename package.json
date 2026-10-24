@@ -1,0 +1,14 @@
+{
+  "name": "russian-vocab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "俄语背单词 · 手机/电脑多端同步 PWA",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build-data.mjs",
+    "validate": "node scripts/validate-data.mjs",
+    "audit": "node scripts/audit-data.mjs",
+    "test": "node tests/srs.test.mjs && node tests/store.test.mjs && node tests/sync.test.mjs"
+  }
+}
