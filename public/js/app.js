@@ -10,7 +10,7 @@ import * as ui from './ui.js';
 
 /* ==================== 常量 ==================== */
 
-const APP_VERSION = '1.1.8';
+const APP_VERSION = '1.1.9';
 
 const STATUS_LABEL = { new: '新词', learning: '学习中', review: '复习中', mastered: '已掌握' };
 const GENDER_LABEL = { 'м': '阳性', 'ж': '阴性', 'с': '中性', 'мн': '复数' };
