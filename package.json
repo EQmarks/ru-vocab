@@ -9,6 +9,7 @@
     "build": "node scripts/build-data.mjs",
     "validate": "node scripts/validate-data.mjs",
     "audit": "node scripts/audit-data.mjs",
-    "test": "node tests/srs.test.mjs && node tests/store.test.mjs && node tests/sync.test.mjs"
+    "test": "node tests/srs.test.mjs && node tests/store.test.mjs && node tests/sync.test.mjs",
+    "glyph": "python scripts/glyph_server.py"
   }
 }

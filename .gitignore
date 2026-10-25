@@ -4,3 +4,10 @@ Thumbs.db
 temp/
 *.log
 .vscode/
+# 字形工坊生成物
+glyph/base-hand-new.ttf
+glyph/preview.png
+glyph/current-base.png
+glyph/_input.svg
+__pycache__/
+*.pyc
