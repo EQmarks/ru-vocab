@@ -77,7 +77,8 @@ def _bounds(d):
 
 def _base_height():
     f = TTFont(BASE_TTF)
-    g = f['glyf'][f.getBestCmap()[TARGET_T]]
+    # Match the unchanged Bad Script п, not a previously replaced т.
+    g = f['glyf'][f.getBestCmap()[ord('п')]]
     return float(g.yMax - g.yMin)
 
 
@@ -160,6 +161,13 @@ def apply_glyph(svg_or_d, both=False, advance=None, install=False):
         g.recalcBounds(glyf)
         glyf[gname] = g
         font['hmtx'][gname] = (adv, g.xMin)
+    # Keep the modified font under its OFL-compliant RV Hand family name.
+    names = {1: 'RV Hand', 2: 'Regular', 3: 'RV Hand Regular',
+             4: 'RV Hand Regular', 6: 'RVHand-Regular',
+             16: 'RV Hand', 17: 'Regular'}
+    for record in font['name'].names:
+        if record.nameID in names:
+            record.string = names[record.nameID].encode(record.getEncoding())
     font.save(NEW_TTF)
     render_preview(NEW_TTF)
     if install:
