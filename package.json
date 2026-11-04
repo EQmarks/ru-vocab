@@ -10,6 +10,7 @@
     "validate": "node scripts/validate-data.mjs",
     "audit": "node scripts/audit-data.mjs",
     "test": "node tests/srs.test.mjs && node tests/store.test.mjs && node tests/sync.test.mjs",
-    "glyph": "python scripts/glyph_server.py"
+    "glyph": "python scripts/glyph_server.py",
+    "audio": "python scripts/build_audio.py"
   }
 }

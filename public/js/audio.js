@@ -1,17 +1,29 @@
-// public/js/audio.js — 俄语朗读：使用浏览器内置 speechSynthesis，不加载任何外部音频。
-// 导出 speak(text) 与 isSpeechAvailable()；不支持的设备上静默降级。
+// public/js/audio.js — 单词朗读：优先播放内置 mp3（按单元分文件 + 时间索引），
+// 不可用时退回浏览器 speechSynthesis。索引在启动时预取，音频元素预加载 metadata。
 
 let voicesBound = false;
 let cachedVoice = null;
+let indexPromise = null;
+let textMap = null;
+let currentEl = null;
+let stopTimer = null;
+let currentUtterance = null;
+
+function audioSupported() {
+  return typeof window !== 'undefined' && typeof window.Audio === 'function' && !!document.body;
+}
+
+function ttsSupported() {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window &&
+    typeof window.SpeechSynthesisUtterance === 'function';
+}
 
 export function isSpeechAvailable() {
-  if (typeof window === 'undefined') return false;
-  if (!('speechSynthesis' in window)) return false;
-  return typeof window.SpeechSynthesisUtterance === 'function';
+  return audioSupported() || ttsSupported();
 }
 
 function pickRussianVoice() {
-  if (!isSpeechAvailable()) return null;
+  if (!ttsSupported()) return null;
   let voices = [];
   try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { voices = []; }
   if (!voices.length) return null;
@@ -22,7 +34,7 @@ function pickRussianVoice() {
 }
 
 function ensureVoicesBound() {
-  if (voicesBound || !isSpeechAvailable()) return;
+  if (voicesBound || !ttsSupported()) return;
   voicesBound = true;
   cachedVoice = pickRussianVoice();
   try {
@@ -34,21 +46,74 @@ function ensureVoicesBound() {
   } catch (e) { /* 忽略 */ }
 }
 
-// 提前触发一次音色列表加载（部分浏览器首次 getVoices 为空）。
-export function prepareSpeech() {
-  if (!isSpeechAvailable()) return;
-  ensureVoicesBound();
-  try { window.speechSynthesis.getVoices(); } catch (e) { /* 忽略 */ }
+function loadIndex() {
+  if (indexPromise) return indexPromise;
+  indexPromise = fetch('./audio/index.json', { cache: 'no-cache' })
+    .then((response) => (response && response.ok ? response.json() : null))
+    .then((json) => {
+      if (!json || !json.units) return null;
+      textMap = new Map();
+      Object.values(json.units).forEach((unit) => {
+        const src = unit.src || ('./audio/' + unit.id + '.mp3');
+        (unit.words || []).forEach((word) => {
+          if (!textMap.has(word.ru)) textMap.set(word.ru, { src, start: word.start || 0, dur: word.dur || 1 });
+        });
+      });
+      return json;
+    })
+    .catch(() => null);
+  return indexPromise;
 }
 
-export function speak(text, options) {
-  const value = String(text || '').trim();
-  if (!value) return false;
-  if (!isSpeechAvailable()) return false;
+function stopBundled() {
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  if (currentEl) {
+    const el = currentEl;
+    currentEl = null;
+    try { el.pause(); } catch (e) { /* 忽略 */ }
+    try { el.removeAttribute('src'); el.load(); } catch (e) { /* 忽略 */ }
+    try { el.remove(); } catch (e) { /* 忽略 */ }
+  }
+}
+
+function playBundled(hit, text) {
+  stopBundled();
+  // 用媒体片段 #t= 直接从头播放到单词位置：不用等 metadata、也保住用户手势。
+  const el = document.createElement('audio');
+  el.preload = 'auto';
+  el.src = hit.src + '#t=' + (hit.start || 0).toFixed(2);
+  el.style.display = 'none';
+  document.body.appendChild(el);
+  currentEl = el;
+  // 有些浏览器（尤其旧 iOS）不认 #t 片段：metadata 到了再补一次 seek。
+  el.addEventListener('loadedmetadata', () => {
+    const start = hit.start || 0;
+    if (Math.abs(el.currentTime - start) > 0.5) {
+      try { el.currentTime = start; } catch (e) { /* 忽略 */ }
+    }
+  }, { once: true });
+  let promise = null;
+  try { promise = el.play(); } catch (e) { promise = null; }
+  if (promise && typeof promise.catch === 'function') {
+    promise.catch(() => {
+      // 自动播放被浏览器拦截时，退回 TTS（同样需要手势，失败则静默）。
+      if (text) speakTTS(text);
+    });
+  }
+  stopTimer = setTimeout(() => {
+    if (currentEl === el) stopBundled();
+  }, Math.max(400, ((hit.dur || 1) + 0.4) * 1000));
+  return true;
+}
+
+function speakTTS(value, options) {
+  if (!ttsSupported()) return false;
   ensureVoicesBound();
   try {
     const synth = window.speechSynthesis;
-    synth.cancel();
+    if (synth.speaking || synth.pending) {
+      try { synth.cancel(); } catch (e) { /* 忽略 */ }
+    }
     const utter = new window.SpeechSynthesisUtterance(value);
     utter.lang = 'ru-RU';
     const voice = cachedVoice || pickRussianVoice();
@@ -56,6 +121,10 @@ export function speak(text, options) {
     const opts = options || {};
     utter.rate = typeof opts.rate === 'number' ? opts.rate : 0.92;
     utter.pitch = typeof opts.pitch === 'number' ? opts.pitch : 1;
+    // 保留引用，避免 iOS Safari 把 utterance 回收导致无声。
+    currentUtterance = utter;
+    utter.onend = () => { if (currentUtterance === utter) currentUtterance = null; };
+    utter.onerror = () => { if (currentUtterance === utter) currentUtterance = null; };
     synth.speak(utter);
     return true;
   } catch (e) {
@@ -63,7 +132,30 @@ export function speak(text, options) {
   }
 }
 
+export function prepareSpeech() {
+  if (!audioSupported() && !ttsSupported()) return;
+  loadIndex();
+  ensureVoicesBound();
+  if (ttsSupported()) {
+    try { window.speechSynthesis.getVoices(); } catch (e) { /* 忽略 */ }
+  }
+}
+
+export function speak(text, options) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  if (audioSupported()) {
+    if (!textMap) loadIndex();
+    if (textMap) {
+      const hit = textMap.get(value);
+      if (hit) return playBundled(hit, value);
+    }
+  }
+  return speakTTS(value, options);
+}
+
 export function stopSpeaking() {
-  if (!isSpeechAvailable()) return;
+  stopBundled();
+  if (!ttsSupported()) return;
   try { window.speechSynthesis.cancel(); } catch (e) { /* 忽略 */ }
 }

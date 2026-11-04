@@ -20,6 +20,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.mp3': 'audio/mpeg',
   '.txt': 'text/plain; charset=utf-8',
 };
 
@@ -52,7 +53,26 @@ const server = http.createServer((req, res) => {
     return fs.createReadStream(file).pipe(res);
   }
   headers['Content-Type'] = MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
+  headers['Accept-Ranges'] = 'bytes';
   if (file.endsWith('sw.js')) headers['Cache-Control'] = 'no-cache';
+  // 音频需要 Range 才能跳转到单词位置（手机浏览器尤其如此）。
+  const range = req.headers.range;
+  const size = fs.statSync(file).size;
+  if (range) {
+    const m = /^bytes=(\d*)-(\d*)$/.exec(String(range).trim());
+    if (m) {
+      let start = m[1] ? parseInt(m[1], 10) : 0;
+      let end = m[2] ? parseInt(m[2], 10) : size - 1;
+      if (start < size) {
+        end = Math.min(end, size - 1);
+        headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + size;
+        headers['Content-Length'] = String(end - start + 1);
+        res.writeHead(206, headers);
+        return fs.createReadStream(file, { start, end }).pipe(res);
+      }
+    }
+  }
+  headers['Content-Length'] = String(size);
   res.writeHead(200, headers);
   fs.createReadStream(file).pipe(res);
 });
