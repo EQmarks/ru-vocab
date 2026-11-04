@@ -7,6 +7,7 @@ let indexPromise = null;
 let textMap = null;
 let currentEl = null;
 let stopTimer = null;
+let stopRAF = null;
 let currentUtterance = null;
 
 function audioSupported() {
@@ -67,6 +68,7 @@ function loadIndex() {
 
 function stopBundled() {
   if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  if (stopRAF) { cancelAnimationFrame(stopRAF); stopRAF = null; }
   if (currentEl) {
     const el = currentEl;
     currentEl = null;
@@ -100,9 +102,29 @@ function playBundled(hit, text) {
       if (text) speakTTS(text);
     });
   }
+  // 精确停在单词结束处：之前用固定 +0.4s 会把下一个词的起头也放出来。
+  const startAt = hit.start || 0;
+  const endAt = startAt + (hit.dur || 1);
+  const hardEnd = Math.max(startAt + 0.15, endAt - 0.02);
+  // 以“媒体时间”为准停：墙钟定时器会被缓冲/卡顿带偏，实际播到哪算哪。
+  const poll = () => {
+    if (currentEl !== el) return;
+    if (el.ended || el.currentTime >= hardEnd) stopBundled();
+  };
+  stopRAF = requestAnimationFrame(function tick() {
+    if (currentEl !== el) return;
+    poll();
+    if (currentEl === el) stopRAF = requestAnimationFrame(tick);
+  });
+  const iv = setInterval(() => {
+    if (currentEl !== el) { clearInterval(iv); return; }
+    poll();
+  }, 20);
+  el.addEventListener('timeupdate', poll);
+  // 兜底：标签页在后台时 rAF/interval 都会被节流，别让它一直播下去。
   stopTimer = setTimeout(() => {
     if (currentEl === el) stopBundled();
-  }, Math.max(400, ((hit.dur || 1) + 0.4) * 1000));
+  }, 15000);
   return true;
 }
 
