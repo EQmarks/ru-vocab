@@ -24,13 +24,14 @@ export function build() {
       if (seen.has(w.ru)) continue;
       seen.add(w.ru);
       const { id, ru, stress, tr, zh, pos, gender, aspect, example, tags, level, note } = w;
-      const clean = { id, ru, stress, tr, zh, pos };
+      const clean = { id, ru, stress, tr, zh };
+      if (pos) clean.pos = pos;
       if (gender) clean.gender = gender;
       if (aspect) clean.aspect = aspect;
       if (note) clean.note = note;
       clean.level = level;
       if (Array.isArray(tags) && tags.length) clean.tags = tags;
-      clean.example = { ru: example.ru, zh: example.zh };
+      if (example && example.ru) clean.example = { ru: example.ru, zh: example.zh };
       words.push(clean);
     }
     outUnits.push({ id: u.id, title: u.title, titleRu: u.titleRu, level: u.level, words });

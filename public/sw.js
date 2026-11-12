@@ -1,10 +1,10 @@
 // public/sw.js — Service Worker：静态资源先缓存、后台更新；导航与词库网络优先。
 // 只处理同源 GET；api.github.com 等跨域请求完全不拦截。
 
-const VERSION = 'v1.0.15';
+const VERSION = 'v1.0.16';
 const SHELL_CACHE = 'rv-shell-' + VERSION;
 const DATA_CACHE = 'rv-data-' + VERSION;
-const AUDIO_CACHE = 'rv-audio-v1';
+const AUDIO_CACHE = 'rv-audio-v2';
 const DATA_PATH = '/data/words.json';
 
 const SHELL_ASSETS = [

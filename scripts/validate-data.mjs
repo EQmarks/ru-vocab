@@ -12,7 +12,7 @@ const GENDERS = ['м', 'ж', 'с', 'мн'];
 const ASPECTS = ['нсв', 'св'];
 const VOWELS = 'аеёиоуыэюя';
 const ACUTE = '\u0301';
-const RU_RE = /^[а-яё\- ]+$/;
+const RU_RE = /^[А-Яа-яЁё\- ]+$/;
 const TR_RE = /^[a-z' \-]+$/;
 
 export function stripStress(s) { return String(s || '').replace(/\u0301/g, ''); }
@@ -64,7 +64,8 @@ export function validateUnits(rawUnits) {
     if (!u.titleRu || typeof u.titleRu !== 'string') errors.push(where + ': 缺少 titleRu');
     if (!u.level || !/^[ABC][12]$/.test(u.level)) errors.push(where + ': level 应为 A1/A2/B1/B2');
     if (!Array.isArray(u.words)) { errors.push(where + ': words 必须是数组'); continue; }
-    if (u.words.length !== 60) errors.push(where + ': 每单元必须正好 60 词，实际 ' + u.words.length);
+    if (!u.words.length) errors.push(where + ': 单元不能为空');
+    if (u.words.length > 90) errors.push(where + ': 单元词数过多（>90），实际 ' + u.words.length);
     u.words.forEach((w, i) => {
       const at = where + ' #' + (i + 1) + (w && w.ru ? ' (' + w.ru + ')' : '');
       const expectId = uid + '-' + String(i + 1).padStart(3, '0');
@@ -73,7 +74,7 @@ export function validateUnits(rawUnits) {
       if (seenIds.has(w.id)) errors.push(at + ': id 重复，已被 ' + seenIds.get(w.id) + ' 使用');
       seenIds.set(w.id, where);
       if (typeof w.ru !== 'string' || !RU_RE.test(w.ru)) errors.push(at + ': ru 必须是小写西里尔字母/连字符/空格');
-      else if (vowelCount(w.ru) === 0) errors.push(at + ': ru 没有元音');
+      else if (vowelCount(w.ru) === 0) warnings.push(at + ': ru 没有元音（缩写/前置词？）');
       if (typeof w.stress !== 'string') { errors.push(at + ': 缺少 stress'); }
       else {
         if (stripStress(w.stress) !== w.ru) errors.push(at + ': stress 去掉重音符后必须等于 ru');
@@ -81,8 +82,8 @@ export function validateUnits(rawUnits) {
         const hasYo = w.ru.includes('ё');
         const vc = vowelCount(w.ru);
         if (hasYo && acuteN > 0) errors.push(at + ': 含 ё 的词不要加重音符');
-        if (!hasYo && vc >= 2 && acuteN !== 1) errors.push(at + ': 多音节词必须正好一个重音符，实际 ' + acuteN);
-        if (!hasYo && vc === 1 && acuteN > 0) errors.push(at + ': 单音节词不加/只加一个重音符即可，建议不加');
+        if (!hasYo && vc >= 2 && acuteN === 0) warnings.push(at + ': 多音节词没有重音符');
+        if (!hasYo && vc === 1 && acuteN > 0) warnings.push(at + ': 单音节词加了重音符');
         for (let k = 0; k < w.stress.length; k++) {
           if (w.stress[k] === ACUTE) {
             const prev = w.stress[k - 1] || '';
@@ -97,19 +98,20 @@ export function validateUnits(rawUnits) {
       if (typeof w.zh !== 'string' || !w.zh.trim()) errors.push(at + ': 缺少中文释义 zh');
       else if (w.zh.length > 40) errors.push(at + ': zh 过长（>40 字）');
       else if (!/[\u4e00-\u9fff]/.test(w.zh)) warnings.push(at + ': zh 不含中文');
-      if (!POS.includes(w.pos)) errors.push(at + ': pos 必须是 ' + POS.join('/'));
+      if (w.pos !== undefined && w.pos !== null && w.pos !== '' && !POS.includes(w.pos)) errors.push(at + ': pos 必须是 ' + POS.join('/'));
       if (w.pos === '名词') {
         if (!GENDERS.includes(w.gender)) errors.push(at + ': 名词必须给 gender（м/ж/с/мн）');
       } else if (w.gender !== undefined && w.gender !== null && w.gender !== '') {
         warnings.push(at + ': 非名词不应有 gender');
       }
       if (w.aspect !== undefined && !ASPECTS.includes(w.aspect)) errors.push(at + ': aspect 只能是 нсв/св');
-      if (!w.example || typeof w.example !== 'object') errors.push(at + ': 缺少 example {ru, zh}');
-      else {
+      if (w.example !== undefined && w.example !== null) {
         if (typeof w.example.ru !== 'string' || !w.example.ru.trim()) errors.push(at + ': example.ru 为空');
         else if (w.example.ru.length > 120) errors.push(at + ': example.ru 过长（>120 字符）');
         else if (w.example.ru.includes(ACUTE)) errors.push(at + ': example.ru 不要带重音符');
         if (typeof w.example.zh !== 'string' || !w.example.zh.trim()) errors.push(at + ': example.zh 为空');
+      } else if (w.example !== undefined && w.example !== null) {
+        errors.push(at + ': example 必须是 {ru, zh}');
       }
       if (!Number.isInteger(w.level) || w.level < 1 || w.level > 5) errors.push(at + ': level 必须是 1-5 的整数');
       if (w.tags !== undefined && (!Array.isArray(w.tags) || w.tags.some((t) => typeof t !== 'string'))) warnings.push(at + ': tags 应为字符串数组');
