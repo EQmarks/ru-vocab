@@ -9,8 +9,8 @@
   字母「т」参照 Bad Script「п」的起笔、圆拱、笔画粗细和右倾，
   重画为双拱的 m 形；字高参照未修改的「п」，源轮廓见 glyph/t-new.svg。
   重建：python scripts/glyph.py import glyph/t-new.svg --install
-  字母「м」保留此前基于 Caveat（Impallari Type，OFL）拉丁小写 m
-  的圆角、减细轮廓。
+  字母「м」使用 Bad Script 原生字形（2026-11 按用户要求恢复，之前误换成了
+  Caveat 拉丁 m 的圆角轮廓）。
   用途：俄语手写体认读练习。
 
 字体文件仅用于本站展示，不单独分发。
